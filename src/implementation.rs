@@ -409,3 +409,27 @@ impl<T: SerdeDiff + Serialize + for<'a> Deserialize<'a>> SerdeDiff for Option<T>
 
 type Unit = ();
 opaque_serde_diff!(Unit);
+
+impl<T> SerdeDiff for Box<T>
+where
+    T: SerdeDiff,
+{
+    fn diff<'a, S: SerializeSeq>(
+        &self,
+        ctx: &mut crate::difference::DiffContext<'a, S>,
+        other: &Self,
+    ) -> Result<bool, S::Error> {
+        self.as_ref().diff(ctx, other)
+    }
+
+    fn apply<'de, A>(
+        &mut self,
+        seq: &mut A,
+        ctx: &mut crate::apply::ApplyContext,
+    ) -> Result<bool, <A as serde::de::SeqAccess<'de>>::Error>
+    where
+        A: de::SeqAccess<'de>,
+    {
+        self.as_mut().apply(seq, ctx)
+    }
+}
